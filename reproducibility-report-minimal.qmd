@@ -355,7 +355,11 @@ counts. What does that suggest about how the authors' software (SPSS) and R's
 first.
 
 ```{r}
+flipped.anova = aov(DISTANCE ~ STN_NAME.f * DIRECTION.f,
+                 data = d.tidy)
 
+
+summary(flipped.anova)
 ```
 
 **2. Orientation or direction?** The paper describes the factor as
@@ -365,7 +369,27 @@ their ANOVA? Make an `orientation` column with `if_else()` and refit the model
 with it to check.
 
 ```{r}
+d.orientation = d.tidy %>%
+  mutate(Orientation = if_else((DIRECTION.f == "EAST" &
+                                (STN_NAME.f == "B-Y" |
+                                   STN_NAME.f == "SHER")),
+                               "Towards", 
+                               if_else((DIRECTION.f == "EAST"
+                                        & (STN_NAME.f == "STG"
+                                           |STN_NAME.f == "SPAD")),
+                                "Away", if_else((DIRECTION.f
+                                                   == "WEST" &
+                                (STN_NAME.f == "STG" |
+                                   STN_NAME.f == "SPAD")),
+                                "Towards", "Away"
+                               )))) %>%
+  mutate(Orientation.f = factor(Orientation))
 
+orientation.anova = aov(DISTANCE ~ Orientation.f * STN_NAME.f,
+                 data = d.orientation)
+
+
+summary(orientation.anova)
 ```
 
 **3. Reproduce Figure 1.** Plot the mean distance rating for each station,
@@ -374,7 +398,19 @@ split by direction, with error bars of ±1 standard error, as in the paper.
 for you.
 
 ```{r}
+d.mean = d.tidy %>%
+  group_by(DIRECTION.f, STN_NAME.f) %>%
+  summarise(mean_rating = mean(DISTANCE))
 
+ggplot(d.mean, aes(x = STN_NAME.f, y = mean_rating, 
+                   color = DIRECTION.f, 
+                   group = DIRECTION.f)) + 
+  geom_point() +
+  geom_line() +
+  stat_summary(fun = "mean", geom = "point", size = 3) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", 
+               width = 0.12) +
+  ylim(0,5)
 ```
 
 ## Going further
