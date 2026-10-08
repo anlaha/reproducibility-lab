@@ -4,7 +4,7 @@ subtitle: "Minimal version"
 author: "Anushka"
 date: today
 format:
-  html:
+  pdf:
     toc: true
     toc-location: left
     embed-resources: true
