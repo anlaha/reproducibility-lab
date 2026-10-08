@@ -1,7 +1,7 @@
 ---
 title: "Reproducibility Report: Maglio & Polman (2014), Study 1"
 subtitle: "Minimal version"
-author: "Your name here"
+author: "Anushka"
 date: today
 format:
   html:
@@ -108,7 +108,11 @@ Use `mutate()` and `factor()` to convert both columns. For `STN_NAME`, give
 `factor()` a `levels` argument listing the stations from west to east.
 
 ```{r}
-
+d.tidy = d %>%
+  mutate(DIRECTION.f = factor(DIRECTION),
+         STN_NAME.f = factor(STN_NAME, 
+                             levels = c("SPAD", "STG", 
+                                        "B-Y", "SHER")))
 ```
 
 ## Step 4: Reproduce the analysis
@@ -119,7 +123,8 @@ Count the participants in each direction × station combination. Does it match
 the paper (202 total, 101 per platform)? Is every cell the same size?
 
 ```{r}
-
+d.tidy %>%
+  count(DIRECTION.f, STN_NAME.f)
 ```
 
 ### The 2 × 4 ANOVA
@@ -128,7 +133,11 @@ Fit a two-way ANOVA with `aov()`: distance predicted by direction, station, and
 their interaction. Remember that `y ~ A * B` is shorthand for `y ~ A + B + A:B`.
 
 ```{r}
+main.anova = aov(DISTANCE ~ DIRECTION.f * STN_NAME.f,
+                 data = d.tidy)
 
+
+summary(main.anova)
 ```
 
 The numbers in parentheses in "F(3, 194)" are the degrees of freedom: 3 for the
@@ -156,7 +165,17 @@ Compute it for each effect. Hint: `tidy()` from broom turns the ANOVA table into
 a tibble, with the sums of squares in a column called `sumsq`.
 
 ```{r}
+main.anova.table = tidy(main.anova)
+main.anova.table
 
+ss_residual = main.anova.table %>%
+  filter(term == "Residuals") %>%
+  pull(sumsq)
+
+main.anova.table %>%
+  filter(term != "Residuals") %>%
+  mutate(partial_eta_sq = (sumsq)/(sumsq + ss_residual)) %>%
+  select(term, df, statistic, p.value, partial_eta_sq)
 ```
 
 Do your values round to the paper's .27 (station) and .20 (interaction)?
@@ -172,53 +191,158 @@ direction, run a one-way ANOVA of distance on direction, and compute ηp².
 ```{r}
 #| label: st-george
 
+##only STG rows
+d.stg = d.tidy %>%
+  filter(STN_NAME.f == "STG")
+
+##mean distance rating for each direction
+d.stg %>%
+  group_by(DIRECTION.f) %>%
+  summarise(mean_rating = mean(DISTANCE),
+            n = n())
+
+##running ANOVA
+stg.anova = aov(DISTANCE ~ DIRECTION.f, data = d.stg)
+
+summary(stg.anova)
+
+##partial eta squared
+stg.table = tidy(stg.anova)
+stg.table
+
+ss_residual_stg = stg.table %>%
+  filter(term == "Residuals") %>%
+  pull(sumsq)
+
+stg.table %>%
+  filter(term != "Residuals") %>%
+  mutate(partial_eta_sq = (sumsq)/(sumsq + ss_residual_stg)) %>%
+  select(term, df, statistic, p.value, partial_eta_sq)
 ```
 
 #### Spadina
 
 ```{r}
 #| label: spadina
+##only SPAD rows
+d.spad = d.tidy %>%
+  filter(STN_NAME.f == "SPAD")
 
+##mean distance rating for each direction
+d.spad %>%
+  group_by(DIRECTION.f) %>%
+  summarise(mean_rating = mean(DISTANCE),
+            n = n())
+
+##running ANOVA
+spad.anova = aov(DISTANCE ~ DIRECTION.f, data = d.spad)
+
+summary(spad.anova)
+
+##partial eta squared
+spad.table = tidy(spad.anova)
+spad.table
+
+ss_residual_spad = spad.table %>%
+  filter(term == "Residuals") %>%
+  pull(sumsq)
+
+spad.table %>%
+  filter(term != "Residuals") %>%
+  mutate(partial_eta_sq = (sumsq)/(sumsq + ss_residual_spad)) %>%
+  select(term, df, statistic, p.value, partial_eta_sq)
 ```
 
 #### Bloor-Yonge
 
 ```{r}
 #| label: bloor-yonge
+##only B-Y rows
+d.by = d.tidy %>%
+  filter(STN_NAME.f == "B-Y")
 
+##mean distance rating for each direction
+d.by %>%
+  group_by(DIRECTION.f) %>%
+  summarise(mean_rating = mean(DISTANCE),
+            n = n())
+
+##running ANOVA
+by.anova = aov(DISTANCE ~ DIRECTION.f, data = d.by)
+
+summary(by.anova)
+
+##partial eta squared
+by.table = tidy(by.anova)
+by.table
+
+ss_residual_by = by.table %>%
+  filter(term == "Residuals") %>%
+  pull(sumsq)
+
+by.table %>%
+  filter(term != "Residuals") %>%
+  mutate(partial_eta_sq = (sumsq)/(sumsq + ss_residual_by)) %>%
+  select(term, df, statistic, p.value, partial_eta_sq)
 ```
 
 #### Sherbourne
 
 ```{r}
 #| label: sherbourne
+##only SHER rows
+d.sher = d.tidy %>%
+  filter(STN_NAME.f == "SHER")
 
+##mean distance rating for each direction
+d.sher %>%
+  group_by(DIRECTION.f) %>%
+  summarise(mean_rating = mean(DISTANCE),
+            n = n())
+
+##running ANOVA
+sher.anova = aov(DISTANCE ~ DIRECTION.f, data = d.sher)
+
+summary(sher.anova)
+
+##partial eta squared
+sher.table = tidy(sher.anova)
+sher.table
+
+ss_residual_sher = sher.table %>%
+  filter(term == "Residuals") %>%
+  pull(sumsq)
+
+sher.table %>%
+  filter(term != "Residuals") %>%
+  mutate(partial_eta_sq = (sumsq)/(sumsq + ss_residual_sher)) %>%
+  select(term, df, statistic, p.value, partial_eta_sq)
 ```
 
 Fill in this table as you go:
 
 | Station | Paper *p* | Your *p* | Paper ηp² | Your ηp² |
 |---|---|---|---|---|
-| St. George | < .001 | | .28 | |
-| Spadina | .001 | | .20 | |
-| Bloor-Yonge | .053 | | .08 | |
-| Sherbourne | < .001 | | .24 | |
+| St. George | < .001 | <.001| .28 | .28|
+| Spadina | .001 | .001| .20 | .20|
+| Bloor-Yonge | .053 | .053| .08 | .08|
+| Sherbourne | < .001 | <.001| .24 | .24|
 
 ## Step 5: Reflection
 
 Were you able to reproduce the results you attempted to reproduce? If not, which
 parts could you not reproduce?
 
-> ANSWER HERE
+> All the results reproduced with the exception of the main effect of station in the 2 x 4 ANOVA model (I got F(3, 194) = 23.35 instead of the reported result in the paper, F(3, 194) = 24.10).
 
 How difficult was it to reproduce the results?
 
-> ANSWER HERE
+> It didn't seem difficult to reproduce the results.
 
 What made it hard, and what made it easy? Think about the data files, the
 variable names, and how much the paper told you about the analysis.
 
-> ANSWER HERE
+> I think having a semi-clean dataset in the beginning was the most helpful. What made it easy was (i) clearly labeled column names that match pretty directly to the variable names as reported in the paper, (ii) only relevant columns included in the dataframe, and (iii) the paper stated at least the main 2 x 4 ANOVA analysis very clearly in the paper. The only part that seems a bit hard, especially for newer researchers, is that the partial eta squared calculation and meaning isn't addressed in the paper + it wasn't clearly reported that they ran one-way ANOVA models in the individual station analyses (but these are maybe things that researchers should be familiar with and not something that needs to be addressed in the paper?) 
 
 ## Bonus questions
 
